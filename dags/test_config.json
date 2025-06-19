@@ -1,0 +1,5 @@
+{
+  "target_dir": "/opt/airflow/data/upload/test",
+  "result_dir": "/opt/airflow/data/result/test",
+  "temp_dir": "/opt/airflow/data/temp"
+}

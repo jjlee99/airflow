@@ -1,0 +1,44 @@
+from airflow.sdk import dag
+from datetime import datetime
+import os, json
+
+# utils 모듈 임포트 (PYTHONPATH에 project_root가 잡혀있다고 가정)
+from utils.file_util import get_file_list
+from utils.img_preprocess_util import grayscale
+from utils.file_util import file_copy
+from utils.file_util import clear_folder
+
+def read_config(config_path:str=None):
+    if not(config_path):
+        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "test_config.json"))
+        print("config_path",config_path)
+    with open(config_path, "r") as f:
+        config = json.load(f)
+    return config
+
+@dag(
+    dag_id="image_processing_per_file",
+    start_date=datetime(2024, 1, 1),
+    schedule=None,
+    catchup=False,
+    tags=['image', 'batch']
+)
+def image_processing_dag():
+    config = read_config()
+    files = get_file_list(folder_path=config["target_dir"])
+    print("===========files",type(files))
+    gray_files = grayscale(file_path=files)
+    print("===========gray_files",type(gray_files))
+    copied_files = file_copy(file_path=gray_files)
+    print("===========copied_files",type(copied_files))
+    copied_files >> clear_folder(config["temp_dir"])
+
+dag_instance = image_processing_dag()
+
+if __name__ == "__main__":
+    try:
+        dag_instance.test()
+    except AttributeError:
+        # Airflow 3.0에서 test() 메서드가 없는 경우의 대안
+        print("dag.test() 메서드를 사용할 수 없습니다. CLI 명령을 사용하세요.")
+        print("airflow dags test image_processing_per_file")
